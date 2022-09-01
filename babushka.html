@@ -57,7 +57,7 @@
         padding: 12px;
       }
 
-      #holder {
+      main {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
         margin: 3rem 2rem 1rem 2rem;
@@ -77,18 +77,22 @@
   </head>
 
   <body>
-    <h1 id="menukort">Bistro Babushka</h1>
+    <header>
+      <h1 id="menukort">Bistro Babushka</h1>
+      <h2></h2>
 
-    <nav>
-      <button data-kategori="alle" class="valgt">Alle</button>
-      <button data-kategori="foretter" class="">Foretter</button>
-      <button data-kategori="hovedretter" class="">Hovedretter</button>
-      <button data-kategori="desserter" class="">Desserter</button>
-      <button data-kategori="sides" class="">Sides</button>
-      <button data-kategori="drikkevarer" class="">Drikkevarer</button>
-    </nav>
+      <nav>
+        <button data-kategori="alle" class="valgt">Alle</button>
+        <button data-kategori="foretter">Foretter</button>
+        <button data-kategori="hovedretter">Hovedretter</button>
+        <button data-kategori="desserter">Desserter</button>
+        <button data-kategori="sides">Sides</button>
+        <button data-kategori="drikkevarer">Drikkevarer</button>
+      </nav>
+    </header>
 
-    <section id="holder"></section>
+    <main></main>
+
     <template>
       <article>
         <img src="" alt="" />
@@ -98,7 +102,8 @@
       </article>
     </template>
 
-    <div id="popop">
+    <section id="popop">
+      <div id="luk">lukkeknap</div>
       <article>
         <h2></h2>
         <img src="" alt="" />
@@ -106,59 +111,103 @@
         <p></p>
         <p></p>
       </article>
-    </div>
+    </section>
+
+    <footer>
+      <p>Adresse: Babushka Allé 1</p>
+      <p>Mandag-fredag: kl. 11 - 21</p>
+      <p>lørdag: kl. 11 - 00</p>
+    </footer>
 
     <script>
       const url = "https://babushka-dd8a.restdb.io/rest/menu";
-      const mereinfo = {
+      const mereInfo = {
         headers: {
           "x-apikey": "600ec2fb1346a1524ff12de4",
         },
       };
 
-      let data;
-      let filter = "alle";
+      // Global variabel
+      let madVarer;
 
+      console.log("data");
       async function hentData() {
-        const res = await fetch(url, mereinfo);
-        const json = await res.json();
-        data = json;
-        console.log(data);
-        vis();
+        const respons = await fetch(url, mereInfo);
+        madVarer = await respons.json();
+        visMadVarer();
       }
 
-      function vis() {
-        const holder = document.querySelector("#holder");
-        const template = document.querySelector("template").content;
-        holder.textContent = "";
-        data.forEach((madvarer) => {
-          console.log(filter);
+      // Så den starter med at vise alle madvarer
+      let filter = "alle";
 
-          if (filter == "alle" || filter == madvarer.kategori) {
+      // Tager fat i alle buttons
+      const filterKnapper = document.querySelectorAll("nav button");
+
+      // Får knapperne til at virke ved "click" - kalder på funktionen filtrerRetter
+      filterKnapper.forEach((knap) => knap.addEventListener("click", filtrerMadVarer));
+
+      const header = document.querySelector("header h2");
+
+      function filtrerMadVarer() {
+        console.log("click");
+        filter = this.dataset.kategori;
+
+        // Fjerner klassen "valgt"
+        document.querySelector(".valgt").classList.remove("valgt");
+
+        // Markerer knappen som bliver klikket på
+        this.classList.add("valgt");
+        visMadVarer();
+        header.textContent = this.textContent;
+      }
+
+      const main = document.querySelector("main");
+      const template = document.querySelector("template").content;
+
+      function visMadVarer() {
+        console.log(madVarer);
+        main.textContent = "";
+        madVarer.forEach((mad) => {
+          console.log("kategori", mad.kategori);
+
+          if (filter == mad.kategori || filter == "alle") {
             const klon = template.cloneNode(true);
-            klon.querySelector("article").addEventListener("click", () => visMadvarer(madvarer));
-            klon.querySelector("img").src = "medium/" + madvarer.billednavn + "-md.jpg";
-            klon.querySelector("h2").textContent = madvarer.navn;
-            klon.querySelector("p").textContent = madvarer.kortbeskrivelse;
-            klon.querySelector("p").textContent = madvarer.pris + " kr.";
-            holder.appendChild(klon);
+            klon.querySelector("article").addEventListener("click", () => visEnkeltMadVarer(mad));
+            klon.querySelector("img").src = "medium/" + mad.billednavn + "-md.jpg";
+            // klon.querySelector("img").alt = mad.billede;
+            klon.querySelector("h2").textContent = mad.navn;
+            klon.querySelector("p").textContent = mad.kortbeskrivelse;
+            klon.querySelector("p").textContent = mad.pris + " kr.";
+            main.appendChild(klon);
           }
         });
       }
 
       //POP-OP
-      document.querySelector("#popop").addEventListener("click", () => (popop.style.display = "none"));
-
-      function visMadvarer(madvarerData) {
-        // console.log("visPerson");
-        console.log(madvarerData);
+      function visEnkeltMadvarer(madData) {
+        console.log(madData);
         const popop = document.querySelector("#popop");
         popop.style.display = "flex";
-        popop.querySelector("img").src = "medium/" + madvarerData.billednavn + "-md.jpg";
-        popop.querySelector("h2").textContent = madvarerData.navn;
-        popop.querySelector("h3").textContent = "Oprindelsesregion: " + madvarerData.oprindelsesregion;
-        popop.querySelector("p").textContent = madvarerData.langbeskrivelse;
+        popop.querySelector("img").src = "medium/" + madData.billednavn + "-md.jpg";
+        popop.querySelector("h2").textContent = madData.navn;
+        popop.querySelector("h3").textContent = "Oprindelsesregion: " + madData.oprindelsesregion;
+        popop.querySelector("p").textContent = madData.langbeskrivelse;
       }
+
+      // document.querySelector("#popop").addEventListener("click", () => (popop.style.display = "none"));
+
+      // function visMadvarer(madvarerData) {
+      //   // console.log("visPerson");
+      //   console.log(madvarerData);
+      //   const popop = document.querySelector("#popop");
+      //   popop.style.display = "flex";
+      //   popop.querySelector("img").src = "medium/" + madvarerData.billednavn + "-md.jpg";
+      //   popop.querySelector("h2").textContent = madvarerData.navn;
+      //   popop.querySelector("h3").textContent = "Oprindelsesregion: " + madvarerData.oprindelsesregion;
+      //   popop.querySelector("p").textContent = madvarerData.langbeskrivelse;
+      // }
+
+      document.querySelector("#luk").addEventListener("click", () => (popop.style.display = "none"));
 
       hentData();
     </script>
